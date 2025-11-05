@@ -16,7 +16,7 @@ import (
 func main() {
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("⚠️ No .env file found — using Render environment variables")
 	}
 
 	if err := db.ConnectDB(); err != nil {
