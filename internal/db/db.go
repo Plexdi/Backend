@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -18,23 +19,29 @@ func ConnectDB() error {
 		return fmt.Errorf("DATABASE_URL not set")
 	}
 
-	// Force IPv4 resolution (fixes "no such host" on Windows/Supabase)
-	dialer := &net.Dialer{DualStack: false}
-	customDialer := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialer.DialContext(ctx, "tcp4", addr)
-	}
-
+	// Parse connection config
 	config, err := pgx.ParseConfig(dbURL)
 	if err != nil {
 		return fmt.Errorf("❌ failed to parse config: %w", err)
 	}
-	config.DialFunc = customDialer
 
+	// Use a dialer that supports both IPv4 & IPv6 with timeout
+	dialer := &net.Dialer{
+		Timeout:   5 * time.Second,
+		DualStack: true, // ✅ allows both IPv4 & IPv6
+	}
+
+	config.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return dialer.DialContext(ctx, "tcp", addr)
+	}
+
+	// Try connecting
 	Conn, err = pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
 		return fmt.Errorf("❌ failed to connect: %w", err)
 	}
 
+	// Test connection
 	if err := Conn.Ping(context.Background()); err != nil {
 		return fmt.Errorf("❌ ping failed: %w", err)
 	}
