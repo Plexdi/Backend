@@ -1,0 +1,35 @@
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/Plexdi/plexdi-studio-backend/internal/handlers"
+	"github.com/Plexdi/plexdi-studio-backend/internal/middleware"
+	"github.com/Plexdi/plexdi-studio-backend/internal/services"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+)
+
+func main() {
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	services.LoadCommissions()
+
+	r := gin.Default()
+	r.Use(middleware.LimitRequests())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "https://plexdi-studio.vercel.app"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
+	handlers.RegisterCommissionRoutes(r)
+	r.Run(":" + os.Getenv("PORT"))
+}

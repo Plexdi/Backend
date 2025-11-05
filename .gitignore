@@ -1,0 +1,15 @@
+# Ignore system/editor junk
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Go build output
+bin/
+dist/
+*.exe
+*.out
+
+# Environment files
+.env
