@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Plexdi/plexdi-studio-backend/internal/db"
 	"github.com/Plexdi/plexdi-studio-backend/internal/handlers"
 	"github.com/Plexdi/plexdi-studio-backend/internal/middleware"
 	"github.com/Plexdi/plexdi-studio-backend/internal/services"
@@ -16,6 +17,10 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
+	}
+
+	if err := db.ConnectDB(); err != nil {
+		log.Fatal(err)
 	}
 
 	services.LoadCommissions()
