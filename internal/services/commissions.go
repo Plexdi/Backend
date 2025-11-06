@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"bytes"
-	"html/template"
-
-	"gopkg.in/gomail.v2"
 )
 
 type Commission struct {
@@ -25,6 +23,13 @@ type Commission struct {
 type CommissionData struct {
 	Name string
 	Type string
+}
+
+type resendEmail struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	HTML    string `json:"html"`
 }
 
 // ---------------------------- public variables --------------------------
@@ -103,62 +108,62 @@ func GetAllCommissions() []Commission {
 
 // ------------------ Send -------------------------------------------
 func SendCommissionEmail(to string, data CommissionData) error {
-	from := os.Getenv("EMAIL_USER")
-	pass := os.Getenv("EMAIL_PASS")
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := 587 // Gmail default
-
-	if from == "" || pass == "" || smtpHost == "" {
-		log.Println("⚠️ Missing EMAIL_USER, EMAIL_PASS, or SMTP_HOST in environment")
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		log.Println("⚠️ RESEND_API_KEY not found in environment")
 		return nil
 	}
 
-	// Email HTML template
-	const emailHTML = `
-	<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
-		<h2 style="color: #2563eb; text-align: center;">🎨 New Commission Received</h2>
-		<p style="font-size: 16px; color: #333;">
-			Hey <b>{{.Name}}</b>,<br><br>
-			We’ve received your commission request for a <b>{{.Type}}</b>.<br>
-			Our team will review it and get back to you shortly with details and payment options.
-		</p>
-		<hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
-		<p style="text-align: center; font-size: 14px; color: #555;">
-			– The Plexdi Studio Team<br>
-			<a href="https://plexdi.studio" style="color: #2563eb; text-decoration: none;">plexdi.studio</a>
-		</p>
-	</div>`
+	// Create email HTML
+	emailHTML := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
+			<h2 style="color: #2563eb; text-align: center;">🎨 New Commission Received</h2>
+			<p style="font-size: 16px; color: #333;">
+				Hey <b>%s</b>,<br><br>
+				We’ve received your commission request for a <b>%s</b>.<br>
+				Our team will review it and get back to you shortly with details and payment options.
+			</p>
+			<hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
+			<p style="text-align: center; font-size: 14px; color: #555;">
+				– The Plexdi Studio Team<br>
+				<a href="https://plexdi.studio" style="color: #2563eb; text-decoration: none;">plexdi.studio</a>
+			</p>
+		</div>
+	`, data.Name, data.Type)
 
-	// Render the HTML template with data
-	tmpl, err := template.New("email").Parse(emailHTML)
+	// Build JSON payload for Resend
+	email := resendEmail{
+		From:    "Plexdi Studio <onboarding@resend.dev>", // replace after verifying your domain
+		To:      to,
+		Subject: "🎨 New Commission Received",
+		HTML:    emailHTML,
+	}
+
+	jsonBody, err := json.Marshal(email)
 	if err != nil {
-		log.Printf("❌ Failed to parse email template: %v\n", err)
-		return err
+		return fmt.Errorf("failed to encode email JSON: %w", err)
 	}
 
-	var body bytes.Buffer
-	if err := tmpl.Execute(&body, data); err != nil {
-		log.Printf("❌ Failed to execute email template: %v\n", err)
-		return err
-	}
-
-	// Build the email
-	m := gomail.NewMessage()
-	m.SetHeader("From", from)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", "🎨 New Commission Received")
-	m.SetBody("text/html", body.String())
-
-	// Setup Gmail SMTP
-	d := gomail.NewDialer(smtpHost, smtpPort, from, pass)
-
-	// Try sending and log any errors
-	err = d.DialAndSend(m)
+	// Send email via HTTPS
+	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(jsonBody))
 	if err != nil {
-		log.Printf("❌ Failed to send email to %s: %v\n", to, err)
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	log.Printf("✅ Email sent successfully to %s\n", to)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("Resend API error: %s", resp.Status)
+	}
+
+	log.Printf("✅ Email sent via Resend to %s\n", to)
 	return nil
 }
