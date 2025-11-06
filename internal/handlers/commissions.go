@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"log"
+
 	"github.com/Plexdi/plexdi-studio-backend/internal/db"
 	"github.com/Plexdi/plexdi-studio-backend/internal/services"
 	"github.com/gin-gonic/gin"
@@ -41,10 +43,20 @@ func CreateCommission(c *gin.Context) {
 	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Details)
 
 	// Send confirmation email asynchronously
-	go services.SendCommissionEmail(req.Email, services.CommissionData{
-		Name: req.Name,
-		Type: req.Type,
-	})
+	// Send confirmation email asynchronously
+	go func() {
+		log.Println("🚀 SendCommissionEmail() triggered")
+
+		err := services.SendCommissionEmail(req.Email, services.CommissionData{
+			Name: req.Name,
+			Type: req.Type,
+		})
+		if err != nil {
+			log.Printf("❌ Email failed for %s: %v\n", req.Email, err)
+		} else {
+			log.Printf("✅ Email sent successfully to %s\n", req.Email)
+		}
+	}()
 
 	// Send response
 	c.JSON(http.StatusCreated, gin.H{
