@@ -28,13 +28,12 @@ func main() {
 	r := gin.Default()
 	r.Use(middleware.LimitRequests())
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "https://plexdi-studio.vercel.app", "https://plexdi-studio-frontend.vercel.app"},
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
-
 	handlers.RegisterCommissionRoutes(r)
 	r.Run(":" + os.Getenv("PORT"))
 }
