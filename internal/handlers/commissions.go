@@ -25,8 +25,8 @@ func CreateCommission(c *gin.Context) {
 
 	// Save to Supabase (PostgreSQL)
 	_, err := db.Conn.Exec(context.Background(),
-		`INSERT INTO commissions (id, name, email, discord, type, details)
-		 VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)`,
+		`INSERT INTO commissions (name, email, discord, type, details)
+		VALUES ($1, $2, $3, $4, $5)`,
 		req.Name, req.Email, req.Discord, req.Type, req.Details,
 	)
 	if err != nil {
