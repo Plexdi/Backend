@@ -133,7 +133,7 @@ func SendCommissionEmail(to string, data CommissionData) error {
 
 	// Build JSON payload for Resend
 	email := resendEmail{
-		From:    "Plexdi Studio <onboarding@resend.dev>", // replace after verifying your domain
+		From:    "Plexdi Studio <onboarding@resend.dev>",
 		To:      to,
 		Subject: "🎨 New Commission Received",
 		HTML:    emailHTML,
