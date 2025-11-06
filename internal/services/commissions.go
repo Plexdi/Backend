@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"bytes"
@@ -102,7 +103,17 @@ func GetAllCommissions() []Commission {
 
 // ------------------ Send -------------------------------------------
 func SendCommissionEmail(to string, data CommissionData) error {
-	// HTML template
+	from := os.Getenv("EMAIL_USER")
+	pass := os.Getenv("EMAIL_PASS")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := 587 // Gmail default
+
+	if from == "" || pass == "" || smtpHost == "" {
+		log.Println("⚠️ Missing EMAIL_USER, EMAIL_PASS, or SMTP_HOST in environment")
+		return nil
+	}
+
+	// Email HTML template
 	const emailHTML = `
 	<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
 		<h2 style="color: #2563eb; text-align: center;">🎨 New Commission Received</h2>
@@ -118,30 +129,36 @@ func SendCommissionEmail(to string, data CommissionData) error {
 		</p>
 	</div>`
 
-	// Parse template
+	// Render the HTML template with data
 	tmpl, err := template.New("email").Parse(emailHTML)
 	if err != nil {
+		log.Printf("❌ Failed to parse email template: %v\n", err)
 		return err
 	}
 
 	var body bytes.Buffer
 	if err := tmpl.Execute(&body, data); err != nil {
+		log.Printf("❌ Failed to execute email template: %v\n", err)
 		return err
 	}
 
-	// Send the email
+	// Build the email
 	m := gomail.NewMessage()
-	m.SetHeader("From", os.Getenv("EMAIL_USER"))
+	m.SetHeader("From", from)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", "🎨 New Commission Received")
 	m.SetBody("text/html", body.String())
 
-	d := gomail.NewDialer(
-		os.Getenv("SMTP_HOST"),
-		587,
-		os.Getenv("EMAIL_USER"),
-		os.Getenv("EMAIL_PASS"),
-	)
+	// Setup Gmail SMTP
+	d := gomail.NewDialer(smtpHost, smtpPort, from, pass)
 
-	return d.DialAndSend(m)
+	// Try sending and log any errors
+	err = d.DialAndSend(m)
+	if err != nil {
+		log.Printf("❌ Failed to send email to %s: %v\n", to, err)
+		return err
+	}
+
+	log.Printf("✅ Email sent successfully to %s\n", to)
+	return nil
 }
