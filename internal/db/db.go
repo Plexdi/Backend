@@ -32,7 +32,7 @@ func ConnectDB() error {
 	}
 
 	config.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		return dialer.DialContext(ctx, "tcp", addr)
+		return dialer.DialContext(ctx, "tcp4", addr)
 	}
 
 	// Try connecting
