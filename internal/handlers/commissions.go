@@ -47,9 +47,12 @@ func CreateCommission(c *gin.Context) {
 	go func() {
 		log.Println("🚀 SendCommissionEmail() triggered")
 
-		err := services.SendCommissionEmail(req.Email, services.CommissionData{
-			Name: req.Name,
-			Type: req.Type,
+		err := services.SendCommissionEmail(req.Email, services.Commission{
+			Name:    req.Name,
+			Email:   req.Email,
+			Discord: req.Discord,
+			Type:    req.Type,
+			Details: req.Details,
 		})
 		if err != nil {
 			log.Printf("❌ Email failed for %s: %v\n", req.Email, err)

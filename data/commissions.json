@@ -3,21 +3,45 @@
     "id": 1,
     "name": "Ngo Thanh Nguyen",
     "email": "Thanhngo200698@gmail.com",
+    "discord": "",
     "type": "banner",
+    "platform": "",
     "details": "I want a twitch banner "
   },
   {
     "id": 2,
     "name": "Ngo Thanh Nguyen",
     "email": "Thanhngo200698@gmail.com",
+    "discord": "",
     "type": "logo",
+    "platform": "",
     "details": "I want twitch  banner skibidi toilet "
   },
   {
     "id": 3,
     "name": "Ngo Thanh Nguyen",
     "email": "Thanhngo200798@gmail.com",
+    "discord": "",
     "type": "banner",
+    "platform": "",
     "details": "Gojo/itachi (ur choice)\nAsura\n\nYoutube banner"
+  },
+  {
+    "id": 4,
+    "name": "Plexdi",
+    "email": "Thanhngo200698@gmail.com",
+    "discord": "",
+    "type": "Banner",
+    "platform": "",
+    "details": "Clean Twitch banner design"
+  },
+  {
+    "id": 5,
+    "name": "Plexdi",
+    "email": "Thanhngo200698@gmail.com",
+    "discord": "",
+    "type": "Banner",
+    "platform": "",
+    "details": "Clean Twitch banner design"
   }
 ]

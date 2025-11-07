@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"bytes"
 )
@@ -107,15 +108,15 @@ func GetAllCommissions() []Commission {
 }
 
 // ------------------ Send -------------------------------------------
-func SendCommissionEmail(to string, data CommissionData) error {
+func SendCommissionEmail(to string, data Commission) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
 		log.Println("⚠️ RESEND_API_KEY not found in environment")
 		return nil
 	}
 
-	// Create email HTML
-	emailHTML := fmt.Sprintf(`
+	// =============== CLIENT EMAIL ===============
+	clientHTML := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
 			<h2 style="color: #2563eb; text-align: center;">🎨 New Commission Received</h2>
 			<p style="font-size: 16px; color: #333;">
@@ -126,44 +127,83 @@ func SendCommissionEmail(to string, data CommissionData) error {
 			<hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
 			<p style="text-align: center; font-size: 14px; color: #555;">
 				– The Plexdi Studio Team<br>
-				<a href="https://plexdi.studio" style="color: #2563eb; text-decoration: none;">plexdi.studio</a>
+				<a href="https://plexdistudio.com" style="color: #2563eb; text-decoration: none;">plexdistudio.com</a>
 			</p>
-		</div>
-	`, data.Name, data.Type)
+		</div>`,
+		data.Name, data.Type,
+	)
 
-	// Build JSON payload for Resend
-	email := resendEmail{
+	// =============== ADMIN EMAIL (NOTIFICATION) ===============
+	adminHTML := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; background-color: #f4f7fa; padding: 25px; border-radius: 10px; max-width: 600px; margin: auto;">
+			<h2 style="color: #2563eb; text-align: center;">🆕 New Commission Request</h2>
+			<p style="font-size: 16px; color: #333;">
+				A new commission has just been submitted through your Plexdi Studio website.
+			</p>
+			<table style="width: 100%%; border-collapse: collapse; margin-top: 20px;">
+				<tr><td style="padding: 8px; font-weight: bold;">👤 Name:</td><td style="padding: 8px;">%s</td></tr>
+				<tr style="background-color: #f0f2f5;"><td style="padding: 8px; font-weight: bold;">📧 Email:</td><td style="padding: 8px;">%s</td></tr>
+				<tr><td style="padding: 8px; font-weight: bold;">💬 Discord:</td><td style="padding: 8px;">%s</td></tr>
+				<tr style="background-color: #f0f2f5;"><td style="padding: 8px; font-weight: bold;">🎨 Type:</td><td style="padding: 8px;">%s</td></tr>
+				<tr><td style="padding: 8px; font-weight: bold;">📝 Details:</td><td style="padding: 8px;">%s</td></tr>
+			</table>
+			<hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
+			<p style="text-align: center; color: #777;">📅 Received on %s</p>
+			<p style="text-align: center; font-size: 14px; color: #999;">
+				– Plexdi Studio Notification System
+			</p>
+		</div>`,
+		data.Name, data.Email, data.Discord, data.Type, data.Details, time.Now().Format("2006-01-02 15:04"),
+	)
+
+	// Prepare both payloads
+	clientPayload := resendEmail{
 		From:    "noreply@plexdistudio.com",
 		To:      to,
 		Subject: "🎨 New Commission Received",
-		HTML:    emailHTML,
+		HTML:    clientHTML,
 	}
 
-	jsonBody, err := json.Marshal(email)
-	if err != nil {
-		return fmt.Errorf("failed to encode email JSON: %w", err)
+	adminPayload := resendEmail{
+		From:    "noreply@plexdistudio.com",
+		To:      "plexdithanh@gmail.com",
+		Subject: "🆕 New Commission Notification",
+		HTML:    adminHTML,
 	}
 
-	// Send email via HTTPS
-	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+	// Helper to send email
+	send := func(payload resendEmail) error {
+		body, _ := json.Marshal(payload)
+		req, _ := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(body))
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("failed to send email: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 400 {
+			return fmt.Errorf("Resend API error: %s", resp.Status)
+		}
+		return nil
 	}
 
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
+	// Send client + admin emails (parallel)
+	go func() {
+		if err := send(adminPayload); err != nil {
+			log.Println("❌ Admin email failed:", err)
+		} else {
+			log.Println("✅ Admin notified")
+		}
+	}()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+	if err := send(clientPayload); err != nil {
+		return fmt.Errorf("client email failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("Resend API error: %s", resp.Status)
-	}
-
-	log.Printf("✅ Email sent via Resend to %s\n", to)
+	log.Printf("✅ Client + admin email sent successfully\n")
 	return nil
 }
