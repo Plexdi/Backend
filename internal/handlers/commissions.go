@@ -63,9 +63,10 @@ func CreateCommission(c *gin.Context) {
 
 	// Send response
 	c.JSON(http.StatusCreated, gin.H{
-		"message":    "✅ Commission created successfully!",
+		"message":    "Form submitted successfully. Please check your email.",
 		"commission": newCommission,
 	})
+
 }
 
 func GetAllCommissions(c *gin.Context) {
