@@ -74,12 +74,13 @@ func CreateCommission(c *gin.Context) {
 
 func GetAllCommissions(c *gin.Context) {
 	data, err := services.GetAllCommissions()
-	// fmt.Println("this has been reached")
 	if err != nil {
-		log.Printf("fetching error: %v", err)
-		c.JSON(500, gin.H{"error": err.Error()})
+		log.Printf("❌ error fetching commissions: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to fetch commissions",
+		})
 		return
 	}
 
-	c.JSON(200, data)
+	c.JSON(http.StatusOK, data)
 }
