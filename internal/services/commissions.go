@@ -111,7 +111,7 @@ func LoadCommissions() {
 func GetAllCommissions() ([]Commission, error) {
 
 	rows, err := db.Conn.Query(context.Background(), `
-		SELECT id, name, email, discord, details, type, status, created_at, Designers
+		SELECT id, name, email, discord, details, type, status, created_at, designers
 		FROM commissions
 	`)
 	if err != nil {
