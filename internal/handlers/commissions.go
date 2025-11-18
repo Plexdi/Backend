@@ -11,10 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ---------------------- routes registerations ---------------------------
+
 func RegisterCommissionRoutes(r *gin.Engine) {
 	r.POST("/commissions", CreateCommission)
 	r.GET("/commissions", GetAllCommissions)
 }
+
+// ---------------------- controllers ---------------------------
 
 func CreateCommission(c *gin.Context) {
 	var req services.Commission
@@ -27,9 +31,9 @@ func CreateCommission(c *gin.Context) {
 
 	// Save to Supabase (PostgreSQL)
 	_, err := db.Conn.Exec(context.Background(),
-		`INSERT INTO commissions (name, email, discord, type, details)
+		`INSERT INTO commissions (name, email, discord, type, status)
 		VALUES ($1, $2, $3, $4, $5)`,
-		req.Name, req.Email, req.Discord, req.Type, req.Details,
+		req.Name, req.Email, req.Discord, req.Type, req.Status,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -40,19 +44,19 @@ func CreateCommission(c *gin.Context) {
 	}
 
 	// Generate a local struct for the frontend
-	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Details)
+	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Status, req.CreatedAt)
 
-	// Send confirmation email asynchronously
 	// Send confirmation email asynchronously
 	go func() {
 		log.Println("🚀 SendCommissionEmail() triggered")
 
 		err := services.SendCommissionEmail(req.Email, services.Commission{
-			Name:    req.Name,
-			Email:   req.Email,
-			Discord: req.Discord,
-			Type:    req.Type,
-			Details: req.Details,
+			Name:      req.Name,
+			Email:     req.Email,
+			Discord:   req.Discord,
+			Type:      req.Type,
+			Status:    req.Status,
+			CreatedAt: req.CreatedAt,
 		})
 		if err != nil {
 			log.Printf("❌ Email failed for %s: %v\n", req.Email, err)
@@ -70,6 +74,13 @@ func CreateCommission(c *gin.Context) {
 }
 
 func GetAllCommissions(c *gin.Context) {
-	all := services.GetAllCommissions()
-	c.JSON(http.StatusOK, all)
+	data, err := services.GetAllCommissions()
+	// fmt.Println("this has been reached")
+	if err != nil {
+		log.Printf("fetching error: %v", err)
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, data)
 }

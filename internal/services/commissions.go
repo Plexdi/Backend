@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,16 +10,18 @@ import (
 	"time"
 
 	"bytes"
+
+	"github.com/Plexdi/plexdi-studio-backend/internal/db"
 )
 
 type Commission struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Discord  string `json:"discord"`
-	Type     string `json:"type"`
-	Platform string `json:"platform"`
-	Details  string `json:"details"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Discord   string `json:"discord"`
+	Type      string `json:"type"`
+	Status    string `json:"Status"`
+	CreatedAt string `json:"created_at"`
 }
 
 type CommissionData struct {
@@ -42,13 +45,14 @@ const filePath = "data/commissions.json"
 
 // ----------------------------- make commmissions ------------------------------
 
-func MakeCommission(name, email, ctype, details string) Commission {
+func MakeCommission(name, email, ctype, status string, created_at string) Commission {
 	newCommission := Commission{
-		ID:      nextID,
-		Name:    name,
-		Email:   email,
-		Type:    ctype,
-		Details: details,
+		ID:        nextID,
+		Name:      name,
+		Email:     email,
+		Type:      ctype,
+		Status:    status,
+		CreatedAt: created_at,
 	}
 	nextID++
 	commissions = append(commissions, newCommission)
@@ -103,8 +107,36 @@ func LoadCommissions() {
 	fmt.Println("Loaded", len(commissions), "commissions from file.")
 }
 
-func GetAllCommissions() []Commission {
-	return commissions
+func GetAllCommissions() ([]Commission, error) {
+
+	rows, err := db.Conn.Query(context.Background(), `
+		SELECT id, name, email, discord, type, status, created_at
+		FROM commissions
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var commissions []Commission
+
+	for rows.Next() {
+		var c Commission
+		if err := rows.Scan(
+			&c.ID,
+			&c.Name,
+			&c.Email,
+			&c.Discord,
+			&c.Type,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		commissions = append(commissions, c)
+	}
+
+	return commissions, nil
 }
 
 // ------------------ Send -------------------------------------------
@@ -153,7 +185,7 @@ func SendCommissionEmail(to string, data Commission) error {
 				– Plexdi Studio Notification System
 			</p>
 		</div>`,
-		data.Name, data.Email, data.Discord, data.Type, data.Details, time.Now().Format("2006-01-02 15:04"),
+		data.Name, data.Email, data.Discord, data.Type, data.Status, time.Now().Format("2006-01-02 15:04"),
 	)
 
 	// Prepare both payloads

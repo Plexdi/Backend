@@ -46,6 +46,6 @@ func ConnectDB() error {
 		return fmt.Errorf("❌ ping failed: %w", err)
 	}
 
-	log.Println("✅ Connected to Supabase database successfully!")
+	log.Println("✅ Connected to Neon Console database successfully!")
 	return nil
 }
