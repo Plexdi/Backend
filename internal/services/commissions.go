@@ -240,3 +240,146 @@ func SendCommissionEmail(to string, data Commission) error {
 	log.Printf("✅ Client + admin email sent successfully\n")
 	return nil
 }
+
+// --------------------------- update commissions --------------------
+
+func UpdateCommissionStatus(id int, status string) error {
+	// 1 — Fetch commission info (we need email/name/type)
+	var c Commission
+	err := db.Conn.QueryRow(context.Background(),
+		`SELECT id, name, email, discord, details, type, status, created_at
+         FROM commissions WHERE id=$1`,
+		id,
+	).Scan(
+		&c.ID, &c.Name, &c.Email, &c.Discord, &c.Details,
+		&c.Type, &c.Status, &c.CreatedAt,
+	)
+
+	if err != nil {
+		return fmt.Errorf("could not find commission %d: %w", id, err)
+	}
+
+	// 2 — Update the status
+	_, err = db.Conn.Exec(context.Background(),
+		"UPDATE commissions SET status=$1 WHERE id=$2",
+		status, id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed updating status: %w", err)
+	}
+
+	// 3 — Send the correct status email
+	switch status {
+	case "in_progress":
+		return sendInProgressEmail(c)
+
+	case "completed":
+		return sendCompletedEmail(c)
+
+	default:
+		// no email for other statuses
+		return nil
+	}
+}
+
+func sendInProgressEmail(c Commission) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("missing RESEND_API_KEY")
+	}
+
+	html := fmt.Sprintf(`
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
+            <h2 style="color: #2563eb; text-align: center;"> Plexdi Studio Update</h2>
+            <p style="font-size: 16px; color: #333;">
+                Hey <b>%s</b>,<br><br>
+                Your <b>%s</b> commission is officially in progress!  
+                I’ve started working on your request and will keep you updated throughout the process.<br><br>
+
+                Typical turnaround time is <b>2–5 days</b> depending on complexity.
+            </p>
+
+            <p style="font-size: 15px; margin-top: 16px; color: #444;">
+                You’ll receive preview drafts as I work.  
+                Feel free to request changes — you have <b>4 free revisions</b>.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
+
+            <p style="text-align: center; font-size: 14px; color: #555;">
+                – Plexdi Studio<br>
+                <a href="https://plexdistudio.com" style="color: #2563eb;">plexdistudio.com</a>
+            </p>
+        </div>
+    `, c.Name, c.Type)
+
+	return sendResendEmail(c.Email, "🎨 Your Commission Is In Progress", html)
+}
+
+func sendCompletedEmail(c Commission) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("missing RESEND_API_KEY")
+	}
+
+	html := fmt.Sprintf(`
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; background-color: #f8f9fa; border-radius: 10px;">
+            <h2 style="color: #10b981; text-align: center;">✅ Your Commission Is Ready</h2>
+
+            <p style="font-size: 16px; color: #333;">
+                Hey <b>%s</b>,<br><br>
+                Your <b>%s</b> commission is now <b>complete</b>!  
+                Before I deliver the final exported files, payment will be required.
+            </p>
+
+            <p style="font-size: 15px; margin-top: 16px; color: #444;">
+                Don’t worry — you still have <b>4 free revisions</b> available.  
+                After those, revision fees may apply depending on complexity.
+            </p>
+
+            <p style="font-size: 15px; margin-top: 16px; color: #444;">
+                Once payment is confirmed, I’ll send the final high-quality files immediately.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
+
+            <p style="text-align: center; font-size: 14px; color: #555;">
+                – Plexdi Studio<br>
+                <a href="https://plexdistudio.com" style="color: #2563eb;">plexdistudio.com</a>
+            </p>
+        </div>
+    `, c.Name, c.Type)
+
+	return sendResendEmail(c.Email, "🎉 Your Commission Is Finished!", html)
+
+}
+
+func sendResendEmail(to, subject, html string) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+
+	payload := map[string]string{
+		"from":    "noreply@plexdistudio.com",
+		"to":      to,
+		"subject": subject,
+		"html":    html,
+	}
+
+	body, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("resend error: %s", resp.Status)
+	}
+
+	return nil
+}

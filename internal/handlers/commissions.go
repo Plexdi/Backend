@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"log"
 
@@ -16,6 +17,7 @@ import (
 func RegisterCommissionRoutes(r *gin.Engine) {
 	r.POST("/commissions", CreateCommission)
 	r.GET("/commissions", GetAllCommissions)
+	r.PATCH("/commissions/:id", UpdateCommissions)
 }
 
 // ---------------------- controllers ---------------------------
@@ -83,4 +85,44 @@ func GetAllCommissions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, data)
+}
+
+func UpdateCommissions(c *gin.Context) {
+	// 1. ID from URL
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid commission ID"})
+		return
+	}
+
+	// 2. JSON body
+	var req struct {
+		Status string `json:"status"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON body"})
+		return
+	}
+
+	if req.Status == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Missing status"})
+		return
+	}
+
+	// 3. Call service
+	if err := services.UpdateCommissionStatus(id, req.Status); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to update commission",
+			"error":   err.Error(), // 👈 TEMP: show real error
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Commission updated successfully",
+		"id":      id,
+		"status":  req.Status,
+	})
 }
