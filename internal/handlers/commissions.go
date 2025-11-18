@@ -18,6 +18,7 @@ func RegisterCommissionRoutes(r *gin.Engine) {
 	r.POST("/commissions", CreateCommission)
 	r.GET("/commissions", GetAllCommissions)
 	r.PATCH("/commissions/:id", UpdateCommissions)
+	r.DELETE("/commissions/:id", DeleteCommission)
 }
 
 // ---------------------- controllers ---------------------------
@@ -125,4 +126,27 @@ func UpdateCommissions(c *gin.Context) {
 		"id":      id,
 		"status":  req.Status,
 	})
+}
+
+func DeleteCommission(c *gin.Context) {
+	// 1. ID from URL
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid commission ID"})
+		return
+	}
+	// 2. Call service
+	if err := services.DeleteCommission(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to delete commission",
+			"error":   err.Error(), // 👈 TEMP: show real error
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Commission deleted successfully",
+		"id":      id,
+	})
+
 }

@@ -383,3 +383,21 @@ func sendResendEmail(to, subject, html string) error {
 
 	return nil
 }
+
+func DeleteCommission(id int) error {
+	err := db.Conn.QueryRow(context.Background(), `
+		SELECT id FROM commissions WHERE id=$1
+	`, id).Scan(&id)
+
+	if err != nil {
+		return fmt.Errorf("could not find commission %d: %w", id, err)
+	}
+
+	_, err = db.Conn.Exec(context.Background(), `
+		DELETE FROM commissions WHERE id=$1 RETURNING id
+	`, id)
+	if err != nil {
+		return fmt.Errorf("failed deleting commission %d: %w", id, err)
+	}
+	return nil
+}
