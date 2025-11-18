@@ -15,13 +15,14 @@ import (
 )
 
 type Commission struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Discord   string `json:"discord"`
-	Type      string `json:"type"`
-	Status    string `json:"Status"`
-	CreatedAt string `json:"created_at"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Discord   string    `json:"discord"`
+	Details   string    `json:"details"`
+	Type      string    `json:"type"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type CommissionData struct {
@@ -45,14 +46,13 @@ const filePath = "data/commissions.json"
 
 // ----------------------------- make commmissions ------------------------------
 
-func MakeCommission(name, email, ctype, status string, created_at string) Commission {
+func MakeCommission(name, email, ctype, details string) Commission {
 	newCommission := Commission{
-		ID:        nextID,
-		Name:      name,
-		Email:     email,
-		Type:      ctype,
-		Status:    status,
-		CreatedAt: created_at,
+		ID:     nextID,
+		Name:   name,
+		Email:  email,
+		Type:   ctype,
+		Status: "queued",
 	}
 	nextID++
 	commissions = append(commissions, newCommission)
@@ -110,7 +110,7 @@ func LoadCommissions() {
 func GetAllCommissions() ([]Commission, error) {
 
 	rows, err := db.Conn.Query(context.Background(), `
-		SELECT id, name, email, discord, type, status, created_at
+		SELECT id, name, email, discord, details, type, status, created_at
 		FROM commissions
 	`)
 	if err != nil {
@@ -127,6 +127,7 @@ func GetAllCommissions() ([]Commission, error) {
 			&c.Name,
 			&c.Email,
 			&c.Discord,
+			&c.Details,
 			&c.Type,
 			&c.Status,
 			&c.CreatedAt,

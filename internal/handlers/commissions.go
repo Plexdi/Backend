@@ -29,11 +29,12 @@ func CreateCommission(c *gin.Context) {
 		return
 	}
 
-	// Save to Supabase (PostgreSQL)
+	// Save to (PostgreSQL)
 	_, err := db.Conn.Exec(context.Background(),
-		`INSERT INTO commissions (name, email, discord, type, status)
-		VALUES ($1, $2, $3, $4, $5)`,
-		req.Name, req.Email, req.Discord, req.Type, req.Status,
+		`INSERT INTO commissions (name, email, discord, type, details, status)
+		VALUES ($1, $2, $3, $4, $5, $6)`,
+
+		req.Name, req.Email, req.Discord, req.Type, req.Details, "queued",
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -44,19 +45,17 @@ func CreateCommission(c *gin.Context) {
 	}
 
 	// Generate a local struct for the frontend
-	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Status, req.CreatedAt)
+	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Details)
 
 	// Send confirmation email asynchronously
 	go func() {
 		log.Println("🚀 SendCommissionEmail() triggered")
 
 		err := services.SendCommissionEmail(req.Email, services.Commission{
-			Name:      req.Name,
-			Email:     req.Email,
-			Discord:   req.Discord,
-			Type:      req.Type,
-			Status:    req.Status,
-			CreatedAt: req.CreatedAt,
+			Name:    req.Name,
+			Email:   req.Email,
+			Discord: req.Discord,
+			Type:    req.Type,
 		})
 		if err != nil {
 			log.Printf("❌ Email failed for %s: %v\n", req.Email, err)
