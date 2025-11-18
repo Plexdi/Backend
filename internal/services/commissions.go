@@ -23,6 +23,7 @@ type Commission struct {
 	Type      string    `json:"type"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
+	Designers string    `json:"designers"`
 }
 
 type CommissionData struct {
@@ -110,7 +111,7 @@ func LoadCommissions() {
 func GetAllCommissions() ([]Commission, error) {
 
 	rows, err := db.Conn.Query(context.Background(), `
-		SELECT id, name, email, discord, details, type, status, created_at
+		SELECT id, name, email, discord, details, type, status, created_at, Designers
 		FROM commissions
 	`)
 	if err != nil {
@@ -131,6 +132,7 @@ func GetAllCommissions() ([]Commission, error) {
 			&c.Type,
 			&c.Status,
 			&c.CreatedAt,
+			&c.Designers,
 		); err != nil {
 			return nil, err
 		}

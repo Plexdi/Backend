@@ -34,10 +34,10 @@ func CreateCommission(c *gin.Context) {
 
 	// Save to (PostgreSQL)
 	_, err := db.Conn.Exec(context.Background(),
-		`INSERT INTO commissions (name, email, discord, type, details, status)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
+		`INSERT INTO commissions (name, email, discord, type, details, status, designers)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 
-		req.Name, req.Email, req.Discord, req.Type, req.Details, "queued",
+		req.Name, req.Email, req.Discord, req.Type, req.Details, "queued", req.Designers,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
