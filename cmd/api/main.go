@@ -26,7 +26,6 @@ func main() {
 	services.LoadCommissions()
 
 	r := gin.Default()
-	r.Use(middleware.LimitRequests())
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"https://plexdistudio.com", "http://localhost:10000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -34,6 +33,8 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: false,
 	}))
+
+	r.Use(middleware.LimitRequests())
 
 	handlers.RegisterCommissionRoutes(r)
 	r.Run(":" + os.Getenv("PORT"))
