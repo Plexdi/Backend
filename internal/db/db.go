@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var Conn *pgx.Conn
+var Pool *pgxpool.Pool
 
 func ConnectDB() error {
 	dbURL := os.Getenv("DATABASE_URL")
@@ -19,30 +19,34 @@ func ConnectDB() error {
 		return fmt.Errorf("DATABASE_URL not set")
 	}
 
-	// Parse connection config
-	config, err := pgx.ParseConfig(dbURL)
+	// Parse pool config
+	config, err := pgxpool.ParseConfig(dbURL)
 	if err != nil {
 		return fmt.Errorf("❌ failed to parse config: %w", err)
 	}
 
-	// Use a dialer that supports both IPv4 & IPv6 with timeout
+	// Same dialer as before (force IPv4, timeout)
 	dialer := &net.Dialer{
 		Timeout:   5 * time.Second,
-		DualStack: true, // ✅ allows both IPv4 & IPv6
+		DualStack: true,
 	}
 
-	config.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	config.ConnConfig.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		// use tcp4 so Neon/Heroku don’t get weird with IPv6
 		return dialer.DialContext(ctx, "tcp4", addr)
 	}
 
-	// Try connecting
-	Conn, err = pgx.ConnectConfig(context.Background(), config)
+	// Create a *pool*, not a single connection
+	Pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return fmt.Errorf("❌ failed to connect: %w", err)
 	}
 
-	// Test connection
-	if err := Conn.Ping(context.Background()); err != nil {
+	// Test connection with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := Pool.Ping(ctx); err != nil {
 		return fmt.Errorf("❌ ping failed: %w", err)
 	}
 

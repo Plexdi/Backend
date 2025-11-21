@@ -23,6 +23,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	defer db.Pool.Close()
+
 	services.LoadCommissions()
 
 	r := gin.Default()

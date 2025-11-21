@@ -33,7 +33,7 @@ func CreateCommission(c *gin.Context) {
 	}
 
 	// Save to (PostgreSQL)
-	_, err := db.Conn.Exec(context.Background(),
+	_, err := db.Pool.Exec(context.Background(),
 		`INSERT INTO commissions (name, email, discord, type, details, status, designers)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 

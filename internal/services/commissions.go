@@ -110,7 +110,7 @@ func LoadCommissions() {
 
 func GetAllCommissions() ([]Commission, error) {
 
-	rows, err := db.Conn.Query(context.Background(), `
+	rows, err := db.Pool.Query(context.Background(), `
 		SELECT id, name, email, discord, details, type, status, created_at, designers
 		FROM commissions
 	`)
@@ -248,7 +248,7 @@ func SendCommissionEmail(to string, data Commission) error {
 func UpdateCommissionStatus(id int, status string) error {
 	// 1 — Fetch commission info (we need email/name/type)
 	var c Commission
-	err := db.Conn.QueryRow(context.Background(),
+	err := db.Pool.QueryRow(context.Background(),
 		`SELECT id, name, email, discord, details, type, status, created_at
          FROM commissions WHERE id=$1`,
 		id,
@@ -262,7 +262,7 @@ func UpdateCommissionStatus(id int, status string) error {
 	}
 
 	// 2 — Update the status
-	_, err = db.Conn.Exec(context.Background(),
+	_, err = db.Pool.Exec(context.Background(),
 		"UPDATE commissions SET status=$1 WHERE id=$2",
 		status, id,
 	)
@@ -387,7 +387,7 @@ func sendResendEmail(to, subject, html string) error {
 }
 
 func DeleteCommission(id int) error {
-	err := db.Conn.QueryRow(context.Background(), `
+	err := db.Pool.QueryRow(context.Background(), `
 		SELECT id FROM commissions WHERE id=$1
 	`, id).Scan(&id)
 
@@ -395,7 +395,7 @@ func DeleteCommission(id int) error {
 		return fmt.Errorf("could not find commission %d: %w", id, err)
 	}
 
-	_, err = db.Conn.Exec(context.Background(), `
+	_, err = db.Pool.Exec(context.Background(), `
 		DELETE FROM commissions WHERE id=$1 RETURNING id
 	`, id)
 	if err != nil {
