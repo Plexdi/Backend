@@ -17,7 +17,7 @@ func CreateCheckoutSession(priceId string, quantity int64, CommissionsID int64) 
 			},
 		},
 		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String("https://Plexdistudio.com/payments/sucess"),
+		SuccessURL: stripe.String("https://Plexdistudio.com/payments/success"),
 		CancelURL:  stripe.String("https://Plexdistudio.com/payments/cancel"),
 
 		Metadata: map[string]string{
