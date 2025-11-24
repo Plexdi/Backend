@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/stripe/stripe-go/v83"
@@ -27,6 +28,7 @@ func CreateCheckoutSession(priceId string, quantity int64, CommissionsID int64) 
 	s, err := session.New(params)
 
 	if err != nil {
+		log.Printf("❌ Stripe Checkout error: %v\n", err)
 		return "", err
 	}
 
