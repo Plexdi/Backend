@@ -48,22 +48,6 @@ func CreateCommission(c *gin.Context) {
 		})
 		return
 	}
-	// Send confirmation email asynchronously
-	go func() {
-		log.Println("🚀 SendCommissionEmail() triggered")
-
-		err := services.SendCommissionEmail(req.Email, services.Commission{
-			Name:    req.Name,
-			Email:   req.Email,
-			Discord: req.Discord,
-			Type:    req.Type,
-		})
-		if err != nil {
-			log.Printf("❌ Email failed for %s: %v\n", req.Email, err)
-		} else {
-			log.Printf("✅ Email sent successfully to %s\n", req.Email)
-		}
-	}()
 
 	// Send response
 	c.JSON(http.StatusCreated, gin.H{

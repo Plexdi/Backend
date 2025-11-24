@@ -29,7 +29,15 @@ func main() {
 
 	data.InitPriceMap()
 
-	stripe.Key = os.Getenv("Stripe_Secret_key")
+	sk := os.Getenv("Stripe_Secret_key")
+	if sk == "" {
+		log.Fatal("❌ Stripe_Secret_key not set")
+	} else {
+		log.Println("✅ Stripe API key loaded")
+	}
+
+	stripe.Key = sk
+
 	services.LoadCommissions()
 
 	r := gin.Default()
