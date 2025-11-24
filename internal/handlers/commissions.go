@@ -25,6 +25,7 @@ func RegisterCommissionRoutes(r *gin.Engine) {
 
 func CreateCommission(c *gin.Context) {
 	var req services.Commission
+	var newID int64
 
 	// Parse JSON body
 	if err := c.BindJSON(&req); err != nil {
@@ -33,12 +34,13 @@ func CreateCommission(c *gin.Context) {
 	}
 
 	// Save to (PostgreSQL)
-	_, err := db.Pool.Exec(context.Background(),
+	err := db.Pool.QueryRow(
+		context.Background(),
 		`INSERT INTO commissions (name, email, discord, type, details, status, designers)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id`,
 		req.Name, req.Email, req.Discord, req.Type, req.Details, "queued", req.Designers,
-	)
+	).Scan(&newID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "database insert failed",
@@ -46,10 +48,6 @@ func CreateCommission(c *gin.Context) {
 		})
 		return
 	}
-
-	// Generate a local struct for the frontend
-	newCommission := services.MakeCommission(req.Name, req.Email, req.Type, req.Details)
-
 	// Send confirmation email asynchronously
 	go func() {
 		log.Println("🚀 SendCommissionEmail() triggered")
@@ -69,8 +67,8 @@ func CreateCommission(c *gin.Context) {
 
 	// Send response
 	c.JSON(http.StatusCreated, gin.H{
-		"message":    "Form submitted successfully. Please check your email.",
-		"commission": newCommission,
+		"message": "Form submitted successfully. Please check your email.",
+		"id":      newID,
 	})
 
 }

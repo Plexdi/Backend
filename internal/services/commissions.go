@@ -55,35 +55,8 @@ func MakeCommission(name, email, ctype, details string) Commission {
 		Type:   ctype,
 		Status: "queued",
 	}
-	nextID++
-	commissions = append(commissions, newCommission)
-	saveCommissions()
 	fmt.Println("Commission created:", newCommission)
 	return newCommission
-}
-
-// ------------------- save commissions into json file --------------------------
-func saveCommissions() {
-	if err := os.MkdirAll("data", os.ModePerm); err != nil {
-		fmt.Println("Error creating data folder:", err)
-		return
-	}
-
-	file, err := os.Create(filePath)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-
-	// IMPORTANT: write the slice, not nil or uninitialized variable
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // makes it pretty
-	if err := encoder.Encode(commissions); err != nil {
-		fmt.Println("Error writing commissions:", err)
-	} else {
-		fmt.Println("Saved", len(commissions), "commissions to file.")
-	}
 }
 
 // ------------------- Load commissions --------------------------
