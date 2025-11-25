@@ -9,7 +9,7 @@ import (
 var PriceMap map[string][]string
 
 func InitPriceMap() {
-	PriceMap := map[string][]string{
+	PriceMap = map[string][]string{
 		"Banner": []string{
 			os.Getenv("StarterBannerPriceID"),
 			os.Getenv("StandardBannerPriceID"),

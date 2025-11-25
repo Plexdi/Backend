@@ -39,12 +39,14 @@ func createCheckoutSession(c *gin.Context) {
 	var req PaymentRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("❌ createCheckoutSession: invalid request:", err)
 		c.JSON(400, gin.H{"error": "invalid request"})
 		return
 	}
 
 	priceID, err := services.FindProductTierPrice(req.Product, req.Tier)
 	if err != nil {
+		log.Println("❌ createCheckoutSession: price lookup failed:", err)
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -52,6 +54,7 @@ func createCheckoutSession(c *gin.Context) {
 	// Create the checkout session
 	url, err := services.CreateCheckoutSession(priceID, req.Amount, req.CommissionID)
 	if err != nil {
+		log.Println("❌ createCheckoutSession: failed to create session:", err)
 		c.JSON(500, gin.H{"error": "failed to create checkout session", "details": err.Error()})
 		return
 	}
