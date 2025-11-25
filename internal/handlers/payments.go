@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Plexdi/plexdi-studio-backend/internal/data"
 	"github.com/Plexdi/plexdi-studio-backend/internal/db"
 	"github.com/Plexdi/plexdi-studio-backend/internal/services"
 	"github.com/gin-gonic/gin"
@@ -23,6 +22,7 @@ type PaymentRequest struct {
 	Product      string `json:"item"`
 	Amount       int64  `json:"amount"`
 	CommissionID int64  `json:"commissionId"`
+	Tier         string `json:"tier"`
 }
 
 // ---------------------- routes registerations ---------------------------
@@ -43,9 +43,9 @@ func createCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	priceID, ok := data.PriceMap[req.Product]
-	if !ok {
-		c.JSON(400, gin.H{"error": "unknown product"})
+	priceID, err := services.FindProductTierPrice(req.Product, req.Tier)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 

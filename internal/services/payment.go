@@ -1,9 +1,11 @@
 package services
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
+	"github.com/Plexdi/plexdi-studio-backend/internal/data"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/checkout/session"
 )
@@ -33,4 +35,24 @@ func CreateCheckoutSession(priceId string, quantity int64, CommissionsID int64) 
 	}
 
 	return s.URL, nil
+}
+
+func FindProductTierPrice(product string, tier string) (string, error) {
+	priceList, ok := data.PriceMap[product]
+	if !ok {
+		return "", fmt.Errorf("unknown product: %s", product)
+	}
+
+	var tierIndex int
+	switch tier {
+	case "Starter":
+		tierIndex = 0
+	case "Standard":
+		tierIndex = 1
+	case "Premium":
+		tierIndex = 2
+	default:
+		return "", fmt.Errorf("unknown tier: %s", tier)
+	}
+	return priceList[tierIndex], nil
 }
