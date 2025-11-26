@@ -48,7 +48,9 @@ func FindProductTierPrice(product string, tier string) (string, error) {
 
 	if product == "Discord Server Package" || product == "Discord User Package" ||
 		product == "Social Media Banner Package" ||
-		product == "Starter Streamer Pack Package" {
+		product == "Starter Streamer Pack Package" ||
+		product == "Starter Youtube Package" ||
+		product == "Streamer Package" {
 		tierIndex = 0
 		return priceList[tierIndex], nil
 	}
