@@ -49,6 +49,15 @@ func CreateCommission(c *gin.Context) {
 		return
 	}
 
+	//send email
+	req.ID = int(newID)
+	req.Status = "queued"
+
+	// send email
+	if err := services.SendCommissionEmail(req.Email, req); err != nil {
+		log.Printf("failed to send commission received email: %v\n", err)
+	}
+
 	// Send response
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Form submitted successfully. Please check your email.",
