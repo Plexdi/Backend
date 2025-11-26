@@ -40,12 +40,19 @@ func CreateCheckoutSession(priceId string, quantity int64, CommissionsID int64) 
 }
 
 func FindProductTierPrice(product string, tier string) (string, error) {
+	var tierIndex int
 	priceList, ok := data.PriceMap[product]
 	if !ok {
 		return "", fmt.Errorf("unknown product: %s", product)
 	}
 
-	var tierIndex int
+	if product == "Discord Server Package" || product == "Discord User Package" ||
+		product == "Social Media Banner Package" ||
+		product == "Starter Streamer Pack Package" {
+		tierIndex = 0
+		return priceList[tierIndex], nil
+	}
+
 	switch tier {
 	case "Starter":
 		tierIndex = 0

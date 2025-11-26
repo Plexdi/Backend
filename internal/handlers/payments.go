@@ -45,6 +45,10 @@ func createCheckoutSession(c *gin.Context) {
 		return
 	}
 
+	if req.Product == "Package" && req.Tier == "Starter" {
+
+	}
+
 	priceID, err := services.FindProductTierPrice(req.Product, req.Tier)
 	if err != nil {
 		log.Println("❌ createCheckoutSession: price lookup failed:", err)

@@ -40,18 +40,22 @@ func InitPriceMap() {
 			os.Getenv("StandardStreamerPacksPriceID"),
 			os.Getenv("PremiumStreamerPacksPriceID"),
 		},
-		"Bundle": []string{
-			// DS Server 60
+		"Discord Server Package": []string{
 			os.Getenv("DiscordServerPackagePriceID"),
-			//DS User 40
+		},
+		"Discord User Package": []string{
 			os.Getenv("DiscordUserPackagePriceID"),
-			//Social Media Banner 60
+		},
+		"Social Media Banner Package": []string{
 			os.Getenv("SocialMediaBannerPackagePriceID"),
-			//Starter Streamer Pack 60
+		},
+		"Starter Streamer Pack Package": []string{
 			os.Getenv("StarterStreamerPackPackagePriceID"),
-			//Starter Youtube Bundle  40
+		},
+		"Starter Youtube Bundle Package": []string{
 			os.Getenv("StarterYoutubeBundlePackagePriceID"),
-			//Ultimate Creator bundle 100
+		},
+		"Ultimate Creator Bundle Package": []string{
 			os.Getenv("UltimateCreatorBundlePackagePriceID"),
 		},
 	}

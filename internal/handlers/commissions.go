@@ -32,7 +32,6 @@ func CreateCommission(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
-
 	// Save to (PostgreSQL)
 	err := db.Pool.QueryRow(
 		context.Background(),
