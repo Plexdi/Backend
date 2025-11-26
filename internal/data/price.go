@@ -52,7 +52,7 @@ func InitPriceMap() {
 		"Starter Streamer Pack Package": []string{
 			os.Getenv("StarterStreamerPackPackagePriceID"),
 		},
-		"Starter Youtube Bundle Package": []string{
+		"Starter Youtube Package": []string{
 			os.Getenv("StarterYoutubeBundlePackagePriceID"),
 		},
 		"Ultimate Creator Bundle Package": []string{
