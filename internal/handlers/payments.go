@@ -23,6 +23,7 @@ type PaymentRequest struct {
 	Amount       int64  `json:"amount"`
 	CommissionID int64  `json:"commissionId"`
 	Tier         string `json:"tier"`
+	Discount     string `json:"discountCode"`
 }
 
 // ---------------------- routes registerations ---------------------------

@@ -22,6 +22,8 @@ func CreateCheckoutSession(priceId string, quantity int64, CommissionsID int64) 
 		SuccessURL: stripe.String("https://Plexdistudio.com/payments/success"),
 		CancelURL:  stripe.String("https://Plexdistudio.com/payments/cancel"),
 
+		AllowPromotionCodes: stripe.Bool(true),
+
 		Metadata: map[string]string{
 			"commissions_id": strconv.FormatInt(CommissionsID, 10),
 		},
