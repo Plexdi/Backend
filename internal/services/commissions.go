@@ -270,13 +270,11 @@ func sendInProgressEmail(c Commission) error {
                 Hey <b>%s</b>,<br><br>
                 Your <b>%s</b> commission is officially in progress!  
                 I’ve started working on your request and will keep you updated throughout the process.<br><br>
-
-                Typical turnaround time is <b>2–5 days</b> depending on complexity.
             </p>
 
             <p style="font-size: 15px; margin-top: 16px; color: #444;">
                 You’ll receive preview drafts as I work.  
-                Feel free to request changes — you have <b>4 free revisions</b>.
+                Feel free to request changes — you have <b>3 free revisions</b>.
             </p>
 
             <hr style="border: none; border-top: 1px solid #ddd; margin: 25px 0;">
